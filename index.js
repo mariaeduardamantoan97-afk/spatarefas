@@ -106,39 +106,41 @@ app.get('/tasks', requireAuth, (req, res) => {
 
 //incluir nova tarefa
 app.post('/tasks', requireAuth, (req, res) => {
-  const { title, completed } = req.body || {};
+    const { title } = req.body || {};
+    if (!title) return res.status(400).json({ message: 'Título é obrigatório' });
 
-  if (!title)
-    return res.status(400).json({ message: 'Título é obrigatório' });
+    const tasks = readJson(tasksFile);
+    const nextId = tasks.length > 0 ? Math.max(...tasks.map(t => t.id)) + 1 : 1;
+    
+    const newTask = { id: nextId, title, completed: false };
+    tasks.push(newTask);
 
-  const tasks = readJson(tasksFile);
-  const nextId = tasks.reduce((max, t) => Math.max(max, t.id), 0) + 1;
+    // 1) ordem alfabética 
+    tasks.sort((a, b) => a.title.localeCompare(b.title));
 
-  const t = { id: nextId, title, completed: !!completed };
-
-  tasks.push(t);
-  writeJson(tasksFile, tasks);
-  res.json(t);
+    writeJson(tasksFile, tasks);
+    res.json(newTask);
 });
 
 app.put('/tasks/:id', requireAuth, (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  const { title, completed } = req.body || {};
+    const id = parseInt(req.params.id, 10);
+    const { title, completed } = req.body; 
 
-  const tasks = readJson(tasksFile);
+    const tasks = readJson(tasksFile);
+    const t = tasks.find(x => x.id === id);
 
-  const t = tasks.find(x => x.id === id);
+    if (!t) return res.status(404).json({ message: 'Tarefa não encontrada!' });
 
-  if (!t)
-    return res.status(404).json({ message: 'Tarefa não encontrada!' });
+    if (title !== undefined) t.title = title;
+    if (completed !== undefined) t.completed = !!completed;
 
-  if (title !== undefined)
-    t.title = title;
+    
+    tasks.sort((a, b) => a.title.localeCompare(b.title));
 
-  writeJson(tasksFile, tasks);
-  res.json(t);
+    writeJson(tasksFile, tasks);
+    res.json(t);
 });
-
+ 
 app.delete('/tasks/:id', requireAuth, (req, res) => {
   const id = parseInt(req.params.id, 10);
   const tasks = readJson(tasksFile);
@@ -154,4 +156,15 @@ app.delete('/tasks/:id', requireAuth, (req, res) => {
   res.json(removed);
 
 });
-//até aqui pronto ultima aula
+
+// rota para comando desconhecido
+app.get('*', (req, res) =>{
+
+  res.sendFile(path.join(__dirname, 'public','index.html'));
+
+});
+
+  //ponto de entrada
+  app.listen(port, () => {
+   console.log(` servidor rodando em http.//localhost:${port}`);
+  });

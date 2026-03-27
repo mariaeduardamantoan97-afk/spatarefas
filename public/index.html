@@ -32,7 +32,14 @@
     <section id="appPanel" class="card" style="display:none;">
       <header class="app-header">
         <h2 class="app-title">Minhas Tarefas</h2>
-        <button id="btnLogout" style="width:auto;margin-top:0;padding:10px 12px;">Sair</button>
+       <div class="filters" style="margin-top: 15px; display: flex; gap: 5px;">
+    <button onclick="setFilter('all')" class="btn-filter">Todas</button>
+    <button onclick="setFilter('pending')" class="btn-filter">Pendentes</button>
+    <button onclick="setFilter('completed')" class="btn-filter">Concluídas</button>
+</div>
+
+        <button id="btnLogout" style="width:auto;margin-top:0;padding:5px 12px;">Sair</button>
+    
       </header>
 
       <div style="display:flex;gap:10px;align-items:center;">

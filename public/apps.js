@@ -16,9 +16,9 @@ function renderTasks(list) {
         title.textContent = t.title;
 
         const cb = document.createElement('input');
-        cb.className = 'checkBox';
-        cb.type = 'checkBox';
-        cb.checked = !t.completed;
+        cb.className = 'checkbox';
+        cb.type = 'checkbox';
+        cb.checked = !!t.completed;
 
         cb.addEventListener('change', async () => {
             await fetch(`/tasks/${t.id}`, {
@@ -104,7 +104,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        show(app);
+        show('app');
         await fetchTasks();
     });
 
@@ -136,3 +136,87 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await checkAuthAndInit();
 });
+
+let allTasks = []; // Cache local para filtros
+let currentFilter = 'all';
+
+// Função para mudar o filtro
+function setFilter(filter) {
+    currentFilter = filter;
+    renderTasks(allTasks);
+}
+
+function renderTasks(list) {
+    allTasks = list; // Atualiza o cache
+    const ul = document.getElementById('taskList');
+    ul.innerHTML = '';
+
+    // 3) FILTRAR TAREFAS
+    const filtered = list.filter(t => {
+        if (currentFilter === 'pending') return !t.completed;
+        if (currentFilter === 'completed') return t.completed;
+        return true;
+    });
+
+    filtered.forEach(t => {
+        const li = document.createElement('li');
+        
+        const title = document.createElement('span');
+        title.className = 'task-title';
+        title.textContent = t.title;
+        if (t.completed) title.style.textDecoration = 'line-through';
+
+        // 2) EDITAR TAREFA
+        title.addEventListener('dblclick', async () => {
+            const newTitle = prompt('Editar tarefa:', t.title);
+            if (newTitle && newTitle.trim() !== "" && newTitle !== t.title) {
+                await fetch(`/tasks/${t.id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-type': 'application/json' },
+                    body: JSON.stringify({ title: newTitle.trim() })
+                });
+                await fetchTasks();
+            }
+        });
+
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = !!t.completed;
+        cb.addEventListener('change', async () => {
+            await fetch(`/tasks/${t.id}`, {
+                method: 'PUT',
+                headers: { 'Content-type': 'application/json' },
+                body: JSON.stringify({ completed: cb.checked })
+            });
+            await fetchTasks();
+        });
+
+        const del = document.createElement('button');
+        del.textContent = 'Excluir';
+        del.className = 'btn-delete'; // Adicione estilo se quiser
+        del.addEventListener('click', async () => {
+            // 4) CONFIRMAÇÃO ANTES DE EXCLUIR
+            if (confirm(`Deseja realmente excluir a tarefa "${t.title}"?`)) {
+                await fetch(`/tasks/${t.id}`, { method: 'DELETE' });
+                await fetchTasks();
+            }
+        });
+
+        const actions = document.createElement('span');
+        actions.className = 'task-cta';
+        actions.appendChild(cb);
+        actions.appendChild(del);
+        
+        li.appendChild(title);
+        li.appendChild(actions);
+        ul.appendChild(li);
+    });
+}
+
+// Atualize a fetchTasks para apenas pegar os dados
+async function fetchTasks() {
+    const res = await fetch('/tasks');
+    if (res.status === 401) return show('login');
+    const data = await res.json();
+    renderTasks(data);
+}

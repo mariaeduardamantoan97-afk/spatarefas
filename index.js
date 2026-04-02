@@ -47,12 +47,12 @@ function writeJson(file, data) {
 
 ensureDataFiles();
 
-// Middlewares
-app.use(cors()); // mesma origem; pode remover se quiser
+
+app.use(cors()); 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Sessão (cookie) - SEM TOKEN
+
 app.use(
   session({
     secret: 'spa-todo-aula-secret',
@@ -62,7 +62,7 @@ app.use(
   })
 );
 
-// Auth middleware (sessão)
+
 function requireAuth(req, res, next) {
   if (req.session?.user?.username) return next();
   return res.status(401).json({ message: 'Não autenticado' });
@@ -89,7 +89,7 @@ app.post('/logout', (req, res) => {
   req.session.destroy(() => res.json({ success: true }));
 });
 
-//se logado, decidir para onde ir (painel)
+
 app.get('/me', (req, res) => {
   if (!req.session?.user)
     return res.status(401).json({ authenticated: false });
@@ -97,7 +97,7 @@ app.get('/me', (req, res) => {
   res.json({ authenticated: true, user: req.session.user });
 });
 
-//CRUD para tarefas
+
 // pegar as tarefas
 app.get('/tasks', requireAuth, (req, res) => {
   const tasks = readJson(tasksFile);
@@ -115,7 +115,7 @@ app.post('/tasks', requireAuth, (req, res) => {
     const newTask = { id: nextId, title, completed: false };
     tasks.push(newTask);
 
-    // 1) ordem alfabética 
+    // ordem alfabética 
     tasks.sort((a, b) => a.title.localeCompare(b.title));
 
     writeJson(tasksFile, tasks);
